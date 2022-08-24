@@ -22,3 +22,33 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
       
+    - name: dotnet publish
+      run: dotnet publish -c Release -o ./out
+
+    - name: Upload artifact for deployment job
+      uses: actions/upload-artifact@v2
+      with:
+        name: crud-app
+        path: ./out
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    environment:
+      name: 'production'
+      url: 'https://app-alm22-mounir-prod.azurewebsites.net'
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v2
+        with:
+          name: crud-app
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'app-alm22-mounir-prod'
+          slot-name: 'production'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .
